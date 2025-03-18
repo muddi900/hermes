@@ -1,4 +1,6 @@
 import logging
+import json
+from typing import Iterator
 
 from ollama import chat, ChatResponse
 from playwright.sync_api import sync_playwright, Page
@@ -6,14 +8,13 @@ from playwright.sync_api import sync_playwright, Page
 
 logging.basicConfig(level=logging.DEBUG)
 
-func_dict = {"go_to_url": go_to_url}
 
 p = sync_playwright().start()
 
 browser = p.chromium.launch(headless=False)
 
 with open("./system_prompt.md") as f:
-    messages = [{"role": "system", "content": f.read()}]
+    messages: list[dict] = [{"role": "system", "content": f.read()}]
 
 
 def go_to_url(url: str) -> Page:
@@ -22,7 +23,13 @@ def go_to_url(url: str) -> Page:
     return page
 
 
-def initial_prompt(prompt: str):
+func_dict = {"go_to_url": go_to_url}
+
+
+init_prompt = ""
+
+
+def initial_prompt():
     tools = [
         {
             "type": "function",
@@ -41,11 +48,61 @@ def initial_prompt(prompt: str):
         }
     ]
 
+    messages.append({"role": "user", "content": init_prompt})
+
+    resp: ChatResponse = chat(
+        model="PetrosStav/gemma3-tools:4b",
+        messages=messages,
+        tools=tools,
+    )
+
+    func = resp.message.tool_calls[0].function  # type:ignore
+    page = func_dict[func.name](func.arguments["url"])
+
+    site = str(page.inner_html("html"))
+
+    messages.append(
+        {
+            "role": "tool",
+            "content": "",
+            "tool_calls": resp.message.model_dump()["tool_calls"],
+        }
+    )
+
+    return send_site_data(site)
+
+
+def send_site_data(site_data: str):
+    content = f"""
+Attached is the website data you need to analyze:
+
+{site_data}
+
+Please analyze the data as per user requirements and provide an output. the original user prompt: {init_prompt}
+"""
+    messages.append({"role": "user", "content": content})
+
+    resp: Iterator[ChatResponse] = chat(
+        model="PetrosStav/gemma3-tools:4b",
+        messages=messages,
+        stream=True,
+    )
+
+    for chunk in resp:
+        yield chunk
+
 
 def main():
-
+    global init_prompt
     while True:
-        prompt = input("Enter your prompt:\t")
+        if not init_prompt:
+            init_prompt = input("Enter your prompt:\t")
+            if init_prompt.lower() == "exit_prompt":
+                break
+            resp = initial_prompt()
+        print("\n\n")
+        for chunk in resp:
+            print(chunk["message"]["content"], end="", flush=True)
 
     p.stop()
 
