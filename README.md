@@ -5,7 +5,7 @@ A virtual assistant in the vein Manus, but open source and able to run locally.
 ## Why?
 In short, because I can.
 
-In long, because the means of AI production(tkaddLink) need to be democratized. It seems needlessly grandiose and pretentious, but we all know what happened when we let the web to be centralized.
+In long, because [the means of AI production](https://chapra.blog/the-means-of-ai-production-858/) need to be democratized. It seems needlessly grandiose and pretentious, but we all know what happened when we let the web to be centralized.
 
 More people should have access to these tools using their own compute resources.
 
@@ -18,7 +18,7 @@ Right now it is just visiting a web site on a chromium window and try to chat wi
 I am running on python 3.13, but it should work on 3.10+. Navigate to the folder you want clone this repo:
 
 ```bash
-git clone #url
+git clone https://github.com/muddi900/hermes
 cd hermes
 python -m venv env
 ```
