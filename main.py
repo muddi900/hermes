@@ -27,6 +27,7 @@ func_dict = {"go_to_url": go_to_url}
 
 
 init_prompt = ""
+current_prompt = ""
 
 
 def initial_prompt():
@@ -92,17 +93,36 @@ Please analyze the data as per user requirements and provide an output. the orig
         yield chunk
 
 
+def additional_prompts():
+    messages.append({"role": "user", "content": current_prompt})
+
+    resp = chat(model="PetrosStav/gemma3-tools:4b", messages=messages, stream=True)
+
+    for chunk in resp:
+        yield chunk
+
+
 def main():
-    global init_prompt
+    global init_prompt, current_prompt
     while True:
         if not init_prompt:
             init_prompt = input("Enter your prompt:\t")
             if init_prompt.lower() == "exit_prompt":
                 break
             resp = initial_prompt()
+
+        else:
+            current_prompt = input("Enter your prompt:\t")
+            if current_prompt.lower() == "exit_prompt":
+                break
+
+            resp = additional_prompts()
+
         print("\n\n")
         for chunk in resp:
-            print(chunk["message"]["content"], end="", flush=True)
+            message = chunk["message"]["content"]
+            print(message, end="", flush=True)
+            messages.append({"role": "assistant", "content": message})
 
     p.stop()
 
