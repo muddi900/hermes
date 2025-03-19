@@ -33,3 +33,25 @@ For windows powershell:
 ```powershell
 env/Scripts/activate
 ```
+
+Install the requirements:
+
+```bash
+pip install -r requirement.txt
+```
+
+I am using the playwright as the browser backend. For that you need another step.
+
+```bash
+playwright install
+```
+
+This will install all the browsers you need.
+
+Running it is simple. Just type:
+
+```bash
+python main.py
+```
+
+You will be asked to input a prompt. Right now the prompt I/O is terminal only.
